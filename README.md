@@ -17,8 +17,7 @@ Athlete_events being the major file used for the analysis is made up of 271,116 
 
 ## Data Source & Tool
 ![SQLite](https://img.shields.io/badge/SQlite-1DA1F2?style=for-the-badge&logo=sqlite&logoColor=white)
-
-Data Set :https://www.kaggle.com/datasets/heesoo37/120-years-of-olympic-history-athletes-and-results
+[![Kaggle](https://img.shields.io/badge/kagge-1DA1F2?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/datasets/heesoo37/120-years-of-olympic-history-athletes-and-results)
 
 ## Questions Explored
 1.How many olympics games have been held?

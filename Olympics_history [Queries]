@@ -1,0 +1,460 @@
+-- Total Rows
+ SELECT COUNT(*) FROM  athlete_events;
+ 
+ SELECT * FROM athlete_events;
+ SELECT * FROM noc_regions;
+
+
+
+-- QUESTION 1.
+-- How many olympics games have been held between the given date? 
+
+ SELECT  COUNT( Distinct games) AS Games 
+  FROM athlete_events;
+
+
+
+-- QUESTION 2.
+-- List down all olympics games held so far
+
+ SELECT DISTINCT games
+  FROM athlete_events ORDER BY games ;
+
+
+
+-- QUESTION 3.
+-- How many teams participated in the games?
+
+ SELECT  COUNT( DISTINCT team) AS Team 
+  FROM athlete_events;
+  
+
+ 
+-- QUESTION 4.
+-- Mention the total number of nations who participated in each olympics game?
+
+ SELECT games, 
+         COUNT(DISTINCT noc) AS countries
+ FROM athlete_events
+ GROUP BY games;
+
+
+
+-- QUESTION 5. 
+-- Which year saw the highest and lowest no of countries participating in olympics
+
+ WITH least_country AS (
+	SELECT 
+	        games || '-' || COUNT(distinct noc) AS least_country 
+	FROM athlete_events
+	GROUP BY games
+	ORDER BY COUNT(distinct noc) LIMIT 1 ),
+  most_country AS (
+	SELECT  
+	        games|| '-'|| COUNT(distinct noc)  AS most_country
+	FROM athlete_events
+	GROUP BY games
+	ORDER BY COUNT(distinct noc) DESC LIMIT 1 
+                )
+    SELECT least_country, most_country
+    FROM least_country, most_country;
+    
+
+
+-- QUESTION 6.
+-- Which Nation has participated in all the olympic games?
+
+ WITH total_participants AS (
+	SELECT region,
+	        COUNT(DISTINCT games) AS total_games,
+                     DENSE_RANK() OVER(ORDER BY COUNT(distinct games)DESC) AS ranking
+	FROM athlete_events ae
+	LEFT JOIN noc_regions nr
+	 USING(noc)
+	GROUP BY region 
+                     )
+ SELECT region, total_games
+ FROM total_participants
+ WHERE ranking = 1 ;
+
+
+
+-- QUESTION 7.
+-- Identify the sport which was played in all summer olympics
+		-- Total summer olympics
+      SELECT COUNT(distinct games) AS summer_games FROM athlete_events WHERE season = 'Summer';
+      
+  WITH all_summer_game AS (
+	SELECT sport, 
+	        (SELECT COUNT(distinct games) 
+                         FROM athlete_events WHERE season = 'Summer') AS summer_games,
+            COUNT(distinct games) AS total_games
+	FROM athlete_events
+	GROUP BY sport
+                  )
+  SELECT sport, 
+         summer_games, 
+         total_games 
+  FROM all_summer_game
+   WHERE summer_games = total_games ;
+  
+  
+
+-- QUESTION 8.
+-- Which Sports were just played only once in the olympics?
+
+ WITH one_olympic_game AS (
+      SELECT sport, 
+          COUNT(DISTINCT games) AS total_games,
+          games,
+          DENSE_RANK() OVER(ORDER BY count(distinct games) ) AS ranking
+      FROM athlete_events
+      GROUP BY sport
+              )
+  SELECT sport, total_games, games
+  FROM one_olympic_game
+   WHERE ranking = 1 
+  ORDER BY sport;
+
+
+
+-- QUESTION 9.
+-- Fetch the total no of sports played in each olympic games
+
+ SELECT games,
+         COUNT(DISTINCT sport) AS no_of_sports
+ FROM athlete_events
+ GROUP BY games ;
+
+
+
+-- QUESTION 10.
+-- Fetch Oldest athletes to win a gold medal 
+
+    WITH oldest_athlete AS
+            ( SELECT name, sex, CAST(age as int) as age,
+	        games, city, sport, medal
+             FROM athlete_events ),
+     ranking AS( SELECT * ,
+	        DENSE_RANK() OVER( ORDER BY age desc) AS ranking
+                 FROM oldest_athlete
+                  WHERE medal = 'Gold'
+                         )
+    SELECT * FROM ranking
+    WHERE ranking = 1 ; 
+    
+
+--  Oldest athlete to participate in the olympics 
+ 
+ SELECT name, age, sport, games, medal
+ FROM athlete_events 
+  WHERE age <> 'NA' 
+  ORDER BY age DESC LIMIT 1;
+			
+            
+  
+-- QUESTION 11.
+-- Find the ratio of male and female athletes participated in all olympic games
+
+    WITH Females AS (
+        SELECT COUNT(sex) AS Females FROM athlete_events
+                    WHERE Sex = 'F'),
+     Males AS (SELECT COUNT(Sex) AS Males FROM athlete_events 
+		WHERE sex = 'M'
+                       )
+                --concatination of values
+    SELECT  1|| ' : ' ||ROUND(CAST(Males as Float)/CAST(Females as Float),2) AS gender_ratio
+    FROM Females, Males;
+        
+
+
+-- QUESTION 12.
+-- Fetch the top 5 athletes who have won the most gold medals
+
+ WITH top_5_gold_winners AS (
+	SELECT name , 
+	        COUNT(medal) AS total_medal,
+                     DENSE_RANK() OVER(ORDER BY COUNT(medal) DESC) AS ranking
+	FROM athlete_events
+	WHERE medal = 'Gold'
+	GROUP BY name
+                 )
+    SELECT name, total_medal 
+    FROM top_5_gold_winners
+    WHERE ranking between 1 and 5;
+
+ 
+
+-- QUESTION 13.
+-- Fetch the top 5 athletes who have won the most medals.[gold/silver/bronze]
+
+ WITH Top_5_athletes AS (
+	SELECT name, region, team, sport,
+	        COUNT(medal) AS total_medal,
+                     DENSE_RANK() OVER(ORDER BY count(medal) DESC) AS ranking
+	FROM athlete_events AE
+	JOIN noc_regions R
+	    USING(noc)
+              WHERE medal <> 'NA'
+	GROUP BY name, region 
+                    )
+    SELECT name, region, sport, total_medal
+    FROM Top_5_athletes WHERE ranking <= 5;
+   
+ 
+
+-- QUESTION 14.
+-- Fetch the top 5 most successful countries in olympics.Success is defined by no. of medals won
+
+ WITH most_successful AS (
+	SELECT R.region AS country,
+	        COUNT(medal) AS no_of_medals,
+                     DENSE_RANK() OVER(ORDER BY count(medal) DESC) AS ranking
+	FROM athlete_events E
+	JOIN noc_regions R
+	    USING(noc)
+             WHERE medal <> 'NA'
+	GROUP BY R.region
+                    )
+ SELECT country, no_of_medals 
+ FROM most_successful
+  WHERE ranking <= 5;
+
+
+
+-- QUESTION 15.
+-- List down the total gold,silver and bronze medals won by each country 
+
+ SELECT region,
+         COUNT(Case When medal = 'Gold' Then 1 END) AS Gold,
+        COUNT(Case When medal =  'Silver' Then 1 END) AS Silver,
+        COUNT(Case When medal = 'Bronze' Then 1 END) AS Bronze
+ FROM athlete_events AE
+ JOIN noc_regions R
+     USING(noc)
+ WHERE medal <> 'NA'
+ GROUP BY region
+ ORDER BY Gold desc, Silver desc, Bronze desc;
+
+
+
+-- QUESTION 16.
+-- List down total gold,silver & bronze medals won by each country corresponding to each olympic games
+
+SELECT games, region,
+        COUNT(Case When AE.medal = 'Gold' Then 1 END) AS Gold,
+        COUNT(Case When AE.medal =  'Silver' Then 1 END) AS Silver,
+        COUNT(Case When AE.medal = 'Bronze' Then 1 END) AS Bronze
+ FROM athlete_events AE
+ JOIN noc_regions R
+     USING(noc)
+     WHERE medal <> 'NA'
+ GROUP BY games, region;
+
+
+
+-- QUESTION 17.
+-- Identify which country won the most gold, most silver and most bronze medals in each olympics games.
+
+    WITH Temp as (
+                SELECT games, region,
+                        COUNT(Case When medal = 'Gold' Then 1 END) AS Gold,
+                        SUM(Case When medal =  'Silver' Then 1 else 0 END) AS Silver,
+                        SUM(Case When medal = 'Bronze' Then 1 else 0 END) AS Bronze
+                FROM athlete_events AE
+                JOIN noc_regions R
+	       USING(noc)
+                WHERE medal <> 'NA'
+                GROUP BY games, region
+	           )
+    SELECT distinct games,
+            (FIRST_VALUE(region) over(partition by games order by Gold desc) || ' - '|| FIRST_VALUE(Gold) over(partition by games order by Gold Desc)) AS Max_Gold,
+            (FIRST_VALUE(region) over(partition by games order by Silver desc) || ' - '|| FIRST_VALUE(Silver) over(partition by games order by Silver Desc)) AS Max_Silver,
+            (FIRST_VALUE(region) over(partition by games order by Bronze desc) || ' - '|| FIRST_VALUE(Bronze) over(partition by games order by Bronze Desc)) AS Max_Bronze
+    FROM Temp
+    ORDER BY games;
+    
+
+
+-- QUESTION 18.
+-- Identify which country won the most gold, silver, bronze and most medals in each olympic games.
+
+ WITH Temp as (
+                SELECT games, region,
+                        SUM(Case When medal = 'Gold' Then 1 ELSE 0 END) AS Gold,
+                        SUM(Case When medal =  'Silver' Then 1 else 0 END) AS Silver,
+                        SUM(Case When medal = 'Bronze' Then 1 else 0 END) AS Bronze,
+                        COUNT( medal ) AS Medals
+                FROM athlete_events AE
+                JOIN noc_regions R
+	       USING(noc)
+                WHERE medal <> 'NA'
+                GROUP BY games, region
+	       )
+    SELECT distinct games,
+            (FIRST_VALUE(region) over(partition by games order by Gold desc) || ' - '|| FIRST_VALUE(Gold) over(partition by games order by Gold Desc)) AS Max_Gold,
+            (FIRST_VALUE(region) over(partition by games order by Silver desc) || ' - '|| FIRST_VALUE(Silver) over(partition by games order by Silver Desc)) AS Max_Silver,
+            (FIRST_VALUE(region) over(partition by games order by Bronze desc) || ' - '|| FIRST_VALUE(Bronze) over(partition by games order by Bronze Desc)) AS Max_Bronze,
+              (FIRST_VALUE(region) over(partition by games order by Medals desc) || ' - '|| FIRST_VALUE(Medals) over(partition by games order by Medals Desc)) AS Max_Medal
+    FROM Temp
+    ORDER BY games;
+   
+
+
+-- QUESTION 19.
+-- Which country have never won gold medal but have won silver/bronze medals?
+
+ WITH never_won_gold AS (
+      SELECT  region,
+            SUM(Case When medal = 'Gold' Then 1  else 0 END) AS Gold,
+             SUM(Case When medal =  'Silver' Then 1 else 0 END) AS Silver,
+              SUM(Case When medal = 'Bronze' Then 1 else 0 END) AS Bronze
+      FROM athlete_events AE
+      JOIN noc_regions R
+          USING(noc)
+      GROUP BY region
+              )
+  SELECT * FROM never_won_gold
+  WHERE Gold = 0 AND (Silver > 0 OR Bronze > 0 )
+  ORDER BY Gold Desc, Silver Desc, Bronze Desc;
+  
+ 
+  
+-- QUESTION 20.
+-- In which sport/event, Nigeria has won highest medals.
+
+WITH Nigeria_most_sport_win AS (
+	SELECT sport,
+	        count(medal) AS total_medal,
+	        DENSE_RANK() OVER(ORDER BY count(medal) DESC) AS ranking
+	FROM athlete_events AE
+	JOIN noc_regions R
+	    USING(noc)
+	WHERE region = 'Nigeria' AND medal <> 'NA'
+             GROUP BY sport
+                  )
+ SELECT sport, total_medal
+ FROM Nigeria_most_sport_win
+ WHERE ranking = 1;
+
+
+
+-- QUESTION 21.
+-- Break down all olympic games where Nigeria won medal for Football and how many medals in each olympic games
+
+ WITH Nigeria_most_sport_win AS (
+	SELECT region, sport, games,
+	        count(medal) AS total_medal
+	FROM athlete_events AE
+	JOIN noc_regions R
+	    USING(noc)
+	WHERE region = 'Nigeria' AND sport = 'Football' AND Medal <> 'NA'
+             GROUP BY region, sport, games
+                     )
+ SELECT region, sport, games, total_medal
+ FROM Nigeria_most_sport_win ;
+
+
+-- ALL information about Nigeria
+ SELECT * FROM athlete_events 
+ JOIN noc_regions
+     USING (NOC)
+ WHERE region = 'Nigeria';
+ 
+
+
+-- QUESTION 22.
+-- Youngest and Oldest Nigerian athletes
+
+ WITH Oldest_athlete AS (
+         SELECT name|| ' - ' || age|| ' - ' ||sport  AS oldest
+         FROM athlete_events
+          WHERE age <> 'NA' AND noc = 'NGR'
+          ORDER BY age desc LIMIT 1
+                  ),
+  Youngest_athlete AS (
+          SELECT name|| ' - ' || age|| ' - ' ||sport  AS Youngest 
+          FROM athlete_events 
+          WHERE age <> 'NA' AND noc = 'NGR'
+          ORDER BY age  LIMIT 1
+                  )
+SELECT oldest, youngest 
+FROM Oldest_athlete, Youngest_athlete;
+
+
+
+-- QUESTION 23.
+-- Which Nigerian athletes has won Gold medal
+
+ SELECT name, games,
+          sport,
+          count(medal) as total_medals
+ FROM athlete_events
+ WHERE noc = 'NGR' AND medal  = 'Gold'
+ GROUP BY name
+ ORDER BY total_medals Desc;
+ 
+ 
+
+ -- QUESTION 24.
+ -- Which athlete has won the most medal in Nigeria?
+ 
+ WITH athlete_with_most_medal AS (
+     SELECT name, count( medal) as medals,
+             DENSE_RANK() OVER(order by count(medal) desc ) ranking
+     FROM athlete_events
+      WHERE noc = 'NGR' AND medal <> 'NA'
+      GROUP BY name
+            )
+ SELECT name, medals
+ FROM athlete_with_most_medal
+ WHERE ranking = 1;
+ 
+ 
+
+-- QUESTION 25.
+-- How many medals has Nigeria won
+
+SELECT count(medal) AS Total_medal
+FROM athlete_events
+WHERE noc = 'NGR' AND medal <> 'NA';
+
+ 
+
+--QUESTION 26.
+--Break down the  medals according to the total number won in Nigeria
+
+SELECT noc,
+        COUNT(CASE WHEN Medal = 'Gold' THEN 1 END) AS Gold,
+        COUNT(CASE WHEN Medal = 'Bronze' THEN 1 END) AS Bronze,
+        COUNT(CASE WHEN Medal = 'Silver' THEN 1 END) AS Silver
+FROM athlete_events
+WHERE noc = 'NGR';
+
+
+
+        --OR
+        SELECT medal, count(medal) as total_medal
+        FROM athlete_events
+        WHERE noc = 'NGR' AND medal <>'NA'
+        GROUP BY medal;
+        
+--QUESTION 27
+--How many games did Nigeria take part in?
+
+SELECT count(distinct games) AS Games
+FROM athlete_events
+WHERE noc = 'NGR';
+
+
+--QUSTION 28.
+--How many Nigerian athletes won a medal
+
+SELECT 
+        count (distinct name) AS athletes_wth_medal
+FROM athlete_events
+WHERE noc = 'NGR' AND medal <> 'NA';
+
+
+
+ 

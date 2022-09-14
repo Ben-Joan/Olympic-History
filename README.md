@@ -12,6 +12,8 @@ The modern Olympic games is a grand international sporting events featuring wint
 The dataset contains information on the games from 1896 – 2016 and is comprised of two files: (a)athlete_events  (b)noc_regions.
 Athlete_events being the major file used for the analysis is made up of 271,116 rows and 15 columns while the Noc_regions contains three columns of data.
 
+<img src='Database-Diagram.PNG'/>
+
 ## Data Source & Tool
 ![SQLite](https://img.shields.io/badge/SQlite-1DA1F2?style=for-the-badge&logo=sqlite&logoColor=white)
 

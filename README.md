@@ -76,6 +76,25 @@ Data Set :https://www.kaggle.com/datasets/heesoo37/120-years-of-olympic-history-
 
 28.How many Nigerian athletes won a medal
 
+## Some Insights
+- A total of 51 games was played between 1896 – 2016 comprising of 1184 different teams.
+
+- 1896 summer had the least participants of 12 countries while 2016 summer had the most of 207 countries.
+
+- UK, Switzerland, Italy, and France took part in all 51 Olympic games.
+
+- The oldest athlete to take part in the Olympics is John Quincy Adams Ward, 97 years old from Amsterdam.
+ 
+- Michael Fred Phelps of USA have won the most medal of 28 in total.
+
+- USA is the most successful country, 5637 medals won i.e defining success by the total medal won.
+
+- Nigeria participated in 16 of the Olympic games and won the most medal in the football sport (50 medals). In total they have won 99 medals between 1896 – 2016.
+
+- Out of the 565 Nigerian athletes, only 96 won medals.
+
+
+
 
 
 

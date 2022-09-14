@@ -1,5 +1,6 @@
 # Olympic-History
 Exploratory Data Analysis on 120 years of olympic history data using SQL
+
 During this project, some of the following SQL concepts were covered:
 - Group BY aggregate function
 - Windows function (Dense_rank, first_value)
